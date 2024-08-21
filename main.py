@@ -105,7 +105,7 @@ def votos_titulo(titulo: str):
     }
 
 # Suponiendo que los datos están en un DataFrame llamado 'data' y tienen columnas 'title' y 'genre'
-sistem_recom = sistem_recom.head(3500)
+sistem_recom = sistem_recom.head(3000)
 
 sistem_recom['title'] = sistem_recom['title'].str.lower()  # Convertir títulos a minúsculas
 sistem_recom['genres'] = sistem_recom['genres'].str.lower()  # Convertir géneros a minúsculas
