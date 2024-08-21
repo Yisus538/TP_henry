@@ -5,9 +5,9 @@ import pandas as pd
 app = FastAPI()
 
 # Cargar los datos de películas (simularemos la carga desde el CSV)
-data = pd.read_csv(r".\Data\Datos_de_Pelicula.csv")
-cast_data = pd.read_csv(r".\Data\cast_limpio.csv")
-crew_data = pd.read_csv(r".\Data\crew_limpio.csv")
+data = pd.read_csv(r"./Data/Datos_de_Pelicula.csv")
+cast_data = pd.read_csv(r"./Data/cast_limpio.csv")
+crew_data = pd.read_csv(r"./Data/crew_limpio.csv")
 
 
 @app.get("/")
