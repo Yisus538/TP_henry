@@ -1,3 +1,5 @@
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from fastapi import FastAPI
 from datetime import datetime
 import pandas as pd
@@ -8,7 +10,7 @@ app = FastAPI()
 data = pd.read_csv(r"./Data/Datos_de_Pelicula.csv")
 cast_data = pd.read_csv(r"./Data/cast_limpio.csv")
 crew_data = pd.read_csv(r"./Data/crew_limpio.csv")
-
+sistem_recom = pd.read_csv(r'./Data/Recomendacion.csv')
 
 @app.get("/")
 def read_root():
@@ -44,8 +46,8 @@ def cantidad_filmaciones_dia(dia: str):
     
     # Traducir día a número
     dias = {
-        "lunes": 0, "martes": 1, "miércoles": 2, "jueves": 3, 
-        "viernes": 4, "sábado": 5, "domingo": 6
+        "lunes": 0, "martes": 1, "miercoles": 2, "jueves": 3, 
+        "viernes": 4, "sabado": 5, "domingo": 6
     }
     dia_num = dias.get(dia.lower())
     
@@ -101,3 +103,44 @@ def votos_titulo(titulo: str):
         "cantidad_votos": votos,
         "promedio_votos": promedio_votos
     }
+
+# Suponiendo que los datos están en un DataFrame llamado 'data' y tienen columnas 'title' y 'genre'
+sistem_recom = sistem_recom.head(6000)
+
+
+sistem_recom['title'] = sistem_recom['title'].str.lower()  # Convertir títulos a minúsculas
+sistem_recom['genres'] = sistem_recom['genres'].str.lower()  # Convertir géneros a minúsculas
+
+sistem_recom['combined_features'] = sistem_recom['title'] + " " + sistem_recom['genres']
+sistem_recom['combined_features'] = sistem_recom['combined_features'].fillna('None')
+
+tfidf = TfidfVectorizer(stop_words='english')
+tfidf_matrix = tfidf.fit_transform(sistem_recom['combined_features'])
+
+cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
+@app.get("/recomendacion/{titulo}")
+def recomendacion(titulo: str):
+    # Asegúrate de que los títulos están en minúsculas para facilitar la comparación
+    sistem_recom['title'] = sistem_recom['title'].str.lower()
+
+    # Verificar si el título existe en el dataset
+    if titulo.lower() not in sistem_recom['title'].values:
+        return {"error": "Título no encontrado."}
+
+    # Obtener el índice de la película que coincide con el título
+    idx = sistem_recom[sistem_recom['title'] == titulo.lower()].index[0]
+
+    # Obtener las similitudes para la película seleccionada
+    sim_scores = list(enumerate(cosine_sim[idx]))
+
+    # Ordenar las películas por similitud
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+
+    # Obtener los índices de las 5 películas más similares (excluyendo la película misma)
+    similar_indices = [i[0] for i in sim_scores[1:6]]
+
+    # Obtener los títulos de las películas similares
+    similar_movies =sistem_recom['title'].iloc[similar_indices].tolist()
+
+    return {"recomendaciones": similar_movies}
